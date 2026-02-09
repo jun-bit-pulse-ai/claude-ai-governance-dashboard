@@ -1,0 +1,1 @@
+// Role switching functionality for CEO, CFO, CISO, and Architecture dashboards, including event listeners for dashboard switching, animation effects, and interactive node highlighting for network diagrams. The file should handle DOM queries for role buttons and dashboard elements, manage active states, trigger animations, and handle mouse events for visual feedback.
