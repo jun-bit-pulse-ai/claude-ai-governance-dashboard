@@ -1,0 +1,1956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Governance Dashboard - Prompt Shields</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-dark: #0a0e1a;
+            --bg-card: #141824;
+            --bg-elevated: #1a1f2e;
+            --text-primary: #e8edf4;
+            --text-secondary: #9ca8bb;
+            --text-muted: #6b7689;
+            --accent-primary: #00d9ff;
+            --accent-secondary: #7c3aed;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --shadow-glow: rgba(0, 217, 255, 0.15);
+        }
+        
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Background Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 217, 255, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+            position: relative;
+            z-index: 100;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 24px;
+            box-shadow: 0 4px 20px var(--shadow-glow);
+        }
+        
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .logo-text p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Role Switcher */
+        .role-switcher {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-card);
+            padding: 0.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            position: relative;
+            z-index: 102;
+        }
+        
+        .role-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 101;
+        }
+        
+        .role-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-elevated);
+        }
+        
+        .role-btn.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 4px 12px var(--shadow-glow);
+        }
+        
+        /* Dashboard Grid */
+        .dashboard {
+            opacity: 0;
+            animation: fadeIn 0.6s ease forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        /* Metric Card */
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(0, 217, 255, 0.1);
+        }
+        
+        .metric-card:hover::before {
+            opacity: 1;
+        }
+        
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .metric-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .trend-up {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-success);
+        }
+        
+        .trend-down {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-danger);
+        }
+        
+        .trend-neutral {
+            background: rgba(156, 168, 187, 0.1);
+            color: var(--text-secondary);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .metric-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Risk Level Colors */
+        .risk-critical { color: var(--accent-danger); }
+        .risk-high { color: var(--accent-warning); }
+        .risk-medium { color: var(--accent-primary); }
+        .risk-low { color: var(--accent-success); }
+        
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        
+        .chart-header {
+            margin-bottom: 1.5rem;
+        }
+        
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .chart-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        
+        /* Risk Distribution Bars */
+        .risk-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .risk-bar-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .risk-bar-label {
+            width: 80px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-align: right;
+        }
+        
+        .risk-bar-track {
+            flex: 1;
+            height: 32px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .risk-bar-fill {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 0.875rem;
+            transition: width 1s ease;
+        }
+        
+        .risk-bar-count {
+            min-width: 40px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            text-align: right;
+        }
+        
+        /* Priority List */
+        .priority-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .priority-item {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .priority-item:hover {
+            border-color: var(--accent-primary);
+            transform: translateX(4px);
+        }
+        
+        .priority-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        
+        .priority-title {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .priority-score {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+        }
+        
+        .priority-meta {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+        
+        .priority-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .priority-action {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border-radius: 8px;
+            display: inline-block;
+        }
+        
+        /* Progress Ring */
+        .progress-ring {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .ring-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+        
+        .ring-svg {
+            transform: rotate(-90deg);
+        }
+        
+        .ring-background {
+            fill: none;
+            stroke: var(--bg-elevated);
+            stroke-width: 12;
+        }
+        
+        .ring-progress {
+            fill: none;
+            stroke: url(#gradient);
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease;
+        }
+        
+        .ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        
+        .ring-value {
+            font-size: 3rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .ring-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .data-table thead {
+            background: var(--bg-elevated);
+        }
+        
+        .data-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .data-table tbody tr {
+            transition: background 0.2s ease;
+        }
+        
+        .data-table tbody tr:hover {
+            background: var(--bg-elevated);
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .status-critical {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-danger);
+        }
+        
+        .status-high {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-warning);
+        }
+        
+        .status-medium {
+            background: rgba(0, 217, 255, 0.1);
+            color: var(--accent-primary);
+        }
+        
+        .status-low {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-success);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+            
+            .role-switcher {
+                width: 100%;
+                flex-direction: column;
+            }
+            
+            .role-btn {
+                width: 100%;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Animation delays for stagger effect */
+        .metric-card:nth-child(1) { animation-delay: 0.1s; }
+        .metric-card:nth-child(2) { animation-delay: 0.2s; }
+        .metric-card:nth-child(3) { animation-delay: 0.3s; }
+        .metric-card:nth-child(4) { animation-delay: 0.4s; }
+        
+        .metric-card {
+            opacity: 0;
+            animation: fadeIn 0.6s ease forwards;
+        }
+        
+        /* Network Diagram Styles */
+        .network-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            overflow-y: visible;
+        }
+        
+        .network-canvas {
+            position: relative;
+            width: 1600px;
+            min-width: 1600px;
+            min-height: 900px;
+            height: 900px;
+            background: 
+                linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px),
+                linear-gradient(0deg, var(--border-subtle) 1px, transparent 1px);
+            background-size: 50px 50px;
+            border-radius: 12px;
+            overflow: visible;
+        }
+        
+        /* Component Nodes */
+        .node {
+            position: absolute;
+            background: var(--bg-elevated);
+            border: 2px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 1.5rem;
+            min-width: 180px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+        }
+        
+        .node:hover {
+            transform: translateY(-4px) scale(1.02);
+            border-color: var(--accent-primary);
+            box-shadow: 0 8px 32px rgba(0, 217, 255, 0.2);
+            z-index: 20;
+        }
+        
+        .node-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .node-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        .node-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            line-height: 1.3;
+        }
+        
+        .node-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+        
+        .node-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .node-stat {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .node-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: var(--accent-primary);
+        }
+        
+        .node-stat-label {
+            color: var(--text-muted);
+        }
+        
+        /* Node Type Colors */
+        .node-interface { border-color: rgba(124, 58, 237, 0.3); }
+        .node-interface .node-icon { background: rgba(124, 58, 237, 0.15); color: var(--accent-secondary); }
+        
+        .node-orchestration { border-color: rgba(0, 217, 255, 0.3); }
+        .node-orchestration .node-icon { background: rgba(0, 217, 255, 0.15); color: var(--accent-primary); }
+        
+        .node-agent { border-color: rgba(245, 158, 11, 0.3); }
+        .node-agent .node-icon { background: rgba(245, 158, 11, 0.15); color: var(--accent-warning); }
+        
+        .node-data { border-color: rgba(16, 185, 129, 0.3); }
+        .node-data .node-icon { background: rgba(16, 185, 129, 0.15); color: var(--accent-success); }
+        
+        .node-integration { border-color: rgba(239, 68, 68, 0.3); }
+        .node-integration .node-icon { background: rgba(239, 68, 68, 0.15); color: var(--accent-danger); }
+        
+        /* Connection Lines */
+        .connection-line {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .connection-path {
+            fill: none;
+            stroke: var(--border-subtle);
+            stroke-width: 2;
+            stroke-dasharray: 5, 5;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+        
+        .connection-arrow {
+            fill: var(--border-subtle);
+            opacity: 0.5;
+        }
+        
+        .node:hover ~ .connection-line .connection-path,
+        .connection-line:has(+ .node:hover) .connection-path {
+            stroke: var(--accent-primary);
+            opacity: 1;
+            stroke-dasharray: 0;
+        }
+        
+        .node:hover ~ .connection-line .connection-arrow,
+        .connection-line:has(+ .node:hover) .connection-arrow {
+            fill: var(--accent-primary);
+            opacity: 1;
+        }
+        
+        /* Layer Labels */
+        .layer-label {
+            position: absolute;
+            left: -120px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            transform: rotate(-90deg);
+            transform-origin: right center;
+            white-space: nowrap;
+        }
+        
+        /* Legend */
+        .network-legend {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .legend-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        
+        .legend-text {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Component Details Panel */
+        .component-details {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .detail-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        
+        .detail-title-group h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .detail-category {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .detail-section {
+            margin-bottom: 2rem;
+        }
+        
+        .detail-section h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        
+        .detail-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .detail-list-item {
+            padding: 1rem;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-primary);
+        }
+        
+        .detail-list-item strong {
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        
+        .detail-list-item span {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .tech-badge {
+            padding: 0.5rem 1rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">PS</div>
+                <div class="logo-text">
+                    <h1>Prompt Shields</h1>
+                    <p>AI Governance Control Center</p>
+                </div>
+            </div>
+            
+            <div class="role-switcher">
+                <button class="role-btn active" data-role="ceo">CEO/Board</button>
+                <button class="role-btn" data-role="cfo">CFO</button>
+                <button class="role-btn" data-role="ciso">CISO</button>
+                <button class="role-btn" data-role="architecture">Architecture</button>
+            </div>
+        </header>
+        
+        <!-- CEO Dashboard -->
+        <div id="ceo-dashboard" class="dashboard" style="display: block;">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">Critical Risks</span>
+                        <span class="metric-trend trend-up">â†“ -2 vs last month</span>
+                    </div>
+                    <div class="metric-value risk-critical">3</div>
+                    <div class="metric-subtitle">P0 items requiring immediate action</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">Total Risk Score</span>
+                        <span class="metric-trend trend-up">â†“ -23%</span>
+                    </div>
+                    <div class="metric-value">487</div>
+                    <div class="metric-subtitle">Across 142 AI use cases</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">Shadow AI</span>
+                        <span class="metric-trend trend-neutral">â†’ Stable</span>
+                    </div>
+                    <div class="metric-value risk-high">34%</div>
+                    <div class="metric-subtitle">48 of 142 tools unapproved</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">Compliance Status</span>
+                        <span class="metric-trend trend-up">â†‘ +15%</span>
+                    </div>
+                    <div class="metric-value risk-medium">78%</div>
+                    <div class="metric-subtitle">EU AI Act readiness</div>
+                </div>
+            </div>
+            
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Risk Distribution</h3>
+                        <p class="chart-subtitle">AI use cases by severity level</p>
+                    </div>
+                    
+                    <div class="risk-bars">
+                        <div class="risk-bar-item">
+                            <div class="risk-bar-label risk-critical">Critical</div>
+                            <div class="risk-bar-track">
+                                <div class="risk-bar-fill" style="width: 8%; background: var(--accent-danger);">3</div>
+                            </div>
+                            <div class="risk-bar-count">3</div>
+                        </div>
+                        
+                        <div class="risk-bar-item">
+                            <div class="risk-bar-label risk-high">High</div>
+                            <div class="risk-bar-track">
+                                <div class="risk-bar-fill" style="width: 35%; background: var(--accent-warning);">12</div>
+                            </div>
+                            <div class="risk-bar-count">12</div>
+                        </div>
+                        
+                        <div class="risk-bar-item">
+                            <div class="risk-bar-label risk-medium">Medium</div>
+                            <div class="risk-bar-track">
+                                <div class="risk-bar-fill" style="width: 65%; background: var(--accent-primary);">34</div>
+                            </div>
+                            <div class="risk-bar-count">34</div>
+                        </div>
+                        
+                        <div class="risk-bar-item">
+                            <div class="risk-bar-label risk-low">Low</div>
+                            <div class="risk-bar-track">
+                                <div class="risk-bar-fill" style="width: 85%; background: var(--accent-success);">67</div>
+                            </div>
+                            <div class="risk-bar-count">67</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Top Priority Risk</h3>
+                        <p class="chart-subtitle">Requires immediate board attention</p>
+                    </div>
+                    
+                    <div class="priority-list">
+                        <div class="priority-item">
+                            <div class="priority-header">
+                                <div>
+                                    <div class="priority-title">ChatGPT Shadow AI - Customer Success</div>
+                                    <div class="priority-meta">
+                                        <span>ðŸ‘¥ 47 users</span>
+                                        <span>ðŸ“Š PII data exposed</span>
+                                        <span>ðŸŒ EU operations</span>
+                                    </div>
+                                </div>
+                                <div class="priority-score risk-critical" style="background: rgba(239, 68, 68, 0.1);">10.0</div>
+                            </div>
+                            <div class="priority-action">
+                                <strong>Action:</strong> DLP deployment scheduled Feb 16 | ChatGPT Enterprise by Feb 28
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CFO Dashboard -->
+        <div id="cfo-dashboard" class="dashboard" style="display: none;">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">Shadow AI Spend</span>
+                        <span class="metric-trend trend-down">â†‘ +12%</span>
+                    </div>
+                    <div class="metric-value risk-warning">$127K</div>
+                    <div class="metric-subtitle">Annual redundant subscriptions</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">Consolidation Savings</span>
+                        <span class="metric-trend trend-up">Opportunity</span>
+                    </div>
+                    <div class="metric-value risk-success">$67K</div>
+                    <div class="metric-subtitle">53% cost reduction potential</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">Avoided Fines (Risk)</span>
+                        <span class="metric-trend trend-neutral">Estimated</span>
+                    </div>
+                    <div class="metric-value risk-critical">â‚¬15M+</div>
+                    <div class="metric-subtitle">EU AI Act + GDPR exposure</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">ROI (Platform)</span>
+                        <span class="metric-trend trend-up">6 months</span>
+                    </div>
+                    <div class="metric-value risk-success">820%</div>
+                    <div class="metric-subtitle">5-year return on investment</div>
+                </div>
+            </div>
+            
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Shadow AI Spend Breakdown</h3>
+                        <p class="chart-subtitle">Top 5 redundant tools by annual cost</p>
+                    </div>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tool</th>
+                                <th>Users</th>
+                                <th>Cost/Year</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>ChatGPT</strong></td>
+                                <td>47</td>
+                                <td>$11,280</td>
+                                <td><span class="status-badge status-high">Shadow AI</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Notion AI</strong></td>
+                                <td>89</td>
+                                <td>$10,680</td>
+                                <td><span class="status-badge status-high">Shadow AI</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Jasper.ai</strong></td>
+                                <td>12</td>
+                                <td>$7,056</td>
+                                <td><span class="status-badge status-high">Shadow AI</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Claude</strong></td>
+                                <td>23</td>
+                                <td>$5,520</td>
+                                <td><span class="status-badge status-medium">Under Review</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>GitHub Copilot</strong></td>
+                                <td>34</td>
+                                <td>$4,080</td>
+                                <td><span class="status-badge status-low">Approved</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Cost Consolidation Plan</h3>
+                        <p class="chart-subtitle">Recommended enterprise licenses</p>
+                    </div>
+                    
+                    <div style="margin-top: 2rem;">
+                        <div style="margin-bottom: 2rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span style="color: var(--text-muted); font-size: 0.875rem;">Current Shadow Spend</span>
+                                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">$127,000/year</span>
+                            </div>
+                            <div style="height: 8px; background: var(--bg-elevated); border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: 100%; background: var(--accent-danger);"></div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 2rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span style="color: var(--text-muted); font-size: 0.875rem;">Proposed Enterprise Spend</span>
+                                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent-success);">$60,000/year</span>
+                            </div>
+                            <div style="height: 8px; background: var(--bg-elevated); border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: 47%; background: var(--accent-success);"></div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: var(--bg-elevated); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--accent-success);">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-success); font-family: 'JetBrains Mono', monospace; margin-bottom: 0.5rem;">
+                                $67,000/year savings
+                            </div>
+                            <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                                Break-even: 6 months | 5-year ROI: 820%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CISO Dashboard -->
+        <div id="ciso-dashboard" class="dashboard" style="display: none;">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">P0 Backlog</span>
+                        <span class="metric-trend trend-up">â†“ -2</span>
+                    </div>
+                    <div class="metric-value risk-critical">3</div>
+                    <div class="metric-subtitle">Critical items due this week</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">Control Coverage</span>
+                        <span class="metric-trend trend-up">â†‘ +8%</span>
+                    </div>
+                    <div class="metric-value risk-medium">80%</div>
+                    <div class="metric-subtitle">Target: 95% by end of quarter</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">Data Exposure Score</span>
+                        <span class="metric-trend trend-down">â†‘ High</span>
+                    </div>
+                    <div class="metric-value risk-warning">847</div>
+                    <div class="metric-subtitle">PII/confidential in high-risk tools</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-label">Uncontrolled AI</span>
+                        <span class="metric-trend trend-neutral">â†’ 34%</span>
+                    </div>
+                    <div class="metric-value risk-high">48</div>
+                    <div class="metric-subtitle">Tools with no security controls</div>
+                </div>
+            </div>
+            
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Today's Priorities (P0)</h3>
+                        <p class="chart-subtitle">Action required this week</p>
+                    </div>
+                    
+                    <div class="priority-list">
+                        <div class="priority-item">
+                            <div class="priority-header">
+                                <div>
+                                    <div class="priority-title">ChatGPT - Customer Success</div>
+                                    <div class="priority-meta">
+                                        <span>ðŸ‘¥ 47 users</span>
+                                        <span>ðŸ”“ No DLP</span>
+                                        <span>ðŸ“Š PII data</span>
+                                    </div>
+                                </div>
+                                <div class="priority-score risk-critical" style="background: rgba(239, 68, 68, 0.1);">10.0</div>
+                            </div>
+                            <div class="priority-action">
+                                <strong>Due:</strong> Feb 16 | Enable Purview DLP for chat.openai.com
+                            </div>
+                        </div>
+                        
+                        <div class="priority-item">
+                            <div class="priority-header">
+                                <div>
+                                    <div class="priority-title">Notion AI - Finance</div>
+                                    <div class="priority-meta">
+                                        <span>ðŸ‘¥ 12 users</span>
+                                        <span>ðŸ’° Financial data</span>
+                                        <span>âš ï¸ Shadow AI</span>
+                                    </div>
+                                </div>
+                                <div class="priority-score risk-critical" style="background: rgba(239, 68, 68, 0.1);">9.8</div>
+                            </div>
+                            <div class="priority-action">
+                                <strong>Due:</strong> Feb 12 | Risk assessment meeting with CFO
+                            </div>
+                        </div>
+                        
+                        <div class="priority-item">
+                            <div class="priority-header">
+                                <div>
+                                    <div class="priority-title">Custom CV Screening AI - HR</div>
+                                    <div class="priority-meta">
+                                        <span>ðŸ‡ªðŸ‡º EU high-risk AI</span>
+                                        <span>ðŸ¤– No oversight</span>
+                                        <span>âš–ï¸ Compliance gap</span>
+                                    </div>
+                                </div>
+                                <div class="priority-score risk-critical" style="background: rgba(239, 68, 68, 0.1);">9.5</div>
+                            </div>
+                            <div class="priority-action">
+                                <strong>Due:</strong> Immediate | Pause until compliance review complete
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Security Control Coverage</h3>
+                        <p class="chart-subtitle">Controls implemented across AI tools</p>
+                    </div>
+                    
+                    <div class="progress-ring">
+                        <div class="ring-container">
+                            <svg class="ring-svg" width="200" height="200">
+                                <defs>
+                                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color: var(--accent-primary); stop-opacity: 1" />
+                                        <stop offset="100%" style="stop-color: var(--accent-secondary); stop-opacity: 1" />
+                                    </linearGradient>
+                                </defs>
+                                <circle class="ring-background" cx="100" cy="100" r="85"></circle>
+                                <circle class="ring-progress" cx="100" cy="100" r="85" 
+                                    stroke-dasharray="534" stroke-dashoffset="107"></circle>
+                            </svg>
+                            <div class="ring-text">
+                                <div class="ring-value">80%</div>
+                                <div class="ring-label">Coverage</div>
+                            </div>
+                        </div>
+                        
+                        <div style="width: 100%; margin-top: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; padding: 1rem; background: var(--bg-elevated); border-radius: 8px;">
+                                <span style="color: var(--text-muted); font-size: 0.875rem;">Missing DLP:</span>
+                                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent-danger);">23 tools</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; padding: 1rem; background: var(--bg-elevated); border-radius: 8px;">
+                                <span style="color: var(--text-muted); font-size: 0.875rem;">Missing MFA:</span>
+                                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent-warning);">8 tools</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 1rem; background: var(--bg-elevated); border-radius: 8px;">
+                                <span style="color: var(--text-muted); font-size: 0.875rem;">Missing Audit Logging:</span>
+                                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent-warning);">15 tools</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Architecture Dashboard -->
+        <div id="architecture-dashboard" class="dashboard" style="display: none;">
+            <div class="network-container">
+                <div class="chart-header" style="margin-bottom: 2rem;">
+                    <h3 class="chart-title">AI Use Case Analysis: Financial Advisory Customer Service Bot</h3>
+                    <p class="chart-subtitle">Ownership mapping, data flows, vendor dependencies & risk assessment</p>
+                </div>
+                
+                <div class="network-canvas" style="position: relative; min-height: 900px;">
+                    <!-- SVG for connection lines -->
+                    <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="var(--accent-primary)" opacity="0.6" />
+                            </marker>
+                            <marker id="arrowhead-data" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="var(--accent-success)" opacity="0.6" />
+                            </marker>
+                            <marker id="arrowhead-vendor" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="var(--accent-danger)" opacity="0.6" />
+                            </marker>
+                        </defs>
+                        
+                        <!-- Human Ownership Lines (from bottom of owner boxes to top of core) -->
+                        <path d="M 140 140 L 140 220 L 320 220 L 320 300" stroke="var(--accent-secondary)" stroke-width="2" fill="none" marker-end="url(#arrowhead)" opacity="0.4" stroke-dasharray="5,5"/>
+                        <path d="M 380 140 L 380 300" stroke="var(--accent-secondary)" stroke-width="2" fill="none" marker-end="url(#arrowhead)" opacity="0.4" stroke-dasharray="5,5"/>
+                        <path d="M 620 140 L 620 220 L 520 220 L 520 300" stroke="var(--accent-secondary)" stroke-width="2" fill="none" marker-end="url(#arrowhead)" opacity="0.4" stroke-dasharray="5,5"/>
+                        
+                        <!-- Core Bot to Vendor Dependencies (from right of core to left of vendor boxes) -->
+                        <path d="M 520 330 L 820 330 L 820 270 L 920 270" stroke="var(--accent-danger)" stroke-width="3" fill="none" marker-end="url(#arrowhead-vendor)"/>
+                        <path d="M 520 350 L 820 350 L 820 390 L 920 390" stroke="var(--accent-danger)" stroke-width="3" fill="none" marker-end="url(#arrowhead-vendor)"/>
+                        <path d="M 520 370 L 820 370 L 820 510 L 920 510" stroke="var(--accent-danger)" stroke-width="3" fill="none" marker-end="url(#arrowhead-vendor)"/>
+                        
+                        <!-- Core Bot to Internal AI Foundry (from bottom of core to top of foundry) -->
+                        <path d="M 520 400 L 520 560 L 720 560 L 720 600" stroke="var(--accent-primary)" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- Data Source to Core Bot (from right of data boxes to left of core) -->
+                        <path d="M 240 470 L 240 380 L 320 380" stroke="var(--accent-success)" stroke-width="2.5" fill="none" marker-end="url(#arrowhead-data)"/>
+                        <path d="M 240 590 L 280 590 L 280 400 L 320 400" stroke="var(--accent-success)" stroke-width="2.5" fill="none" marker-end="url(#arrowhead-data)"/>
+                        <path d="M 240 710 L 280 710 L 280 440 L 320 440" stroke="var(--accent-success)" stroke-width="2.5" fill="none" marker-end="url(#arrowhead-data)"/>
+                        
+                        <!-- Vendor to Data Sources (from right of vendor boxes to right of data boxes) -->
+                        <path d="M 1100 270 L 1180 270 L 1180 470 L 240 470" stroke="var(--accent-warning)" stroke-width="2" fill="none" opacity="0.5" stroke-dasharray="3,3"/>
+                        <path d="M 1100 390 L 1180 390 L 1180 590 L 240 590" stroke="var(--accent-warning)" stroke-width="2" fill="none" opacity="0.5" stroke-dasharray="3,3"/>
+                    </svg>
+                    
+                    <!-- Human Owners (Top Layer) -->
+                    <div class="node node-interface" style="top: 40px; left: 60px; min-width: 160px;">
+                        <div class="node-header">
+                            <div class="node-icon">👤</div>
+                            <div class="node-title">Sarah Chen</div>
+                        </div>
+                        <div class="node-subtitle">VP Customer Success</div>
+                        <div class="node-stats">
+                            <div class="node-stat">
+                                <span class="node-stat-label">Business Owner</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="node node-interface" style="top: 40px; left: 300px; min-width: 160px;">
+                        <div class="node-header">
+                            <div class="node-icon">👤</div>
+                            <div class="node-title">Marcus Liu</div>
+                        </div>
+                        <div class="node-subtitle">Lead ML Engineer</div>
+                        <div class="node-stats">
+                            <div class="node-stat">
+                                <span class="node-stat-label">Technical Owner</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="node node-interface" style="top: 40px; left: 540px; min-width: 160px;">
+                        <div class="node-header">
+                            <div class="node-icon">👤</div>
+                            <div class="node-title">Jessica Park</div>
+                        </div>
+                        <div class="node-subtitle">Data Compliance Officer</div>
+                        <div class="node-stats">
+                            <div class="node-stat">
+                                <span class="node-stat-label">Data Owner</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Core AI Bot System -->
+                    <div class="node node-orchestration" style="top: 300px; left: 320px; min-width: 200px; border-width: 3px;">
+                        <div class="node-header">
+                            <div class="node-icon">🤖</div>
+                            <div class="node-title">Financial Advisory Bot</div>
+                        </div>
+                        <div class="node-subtitle">Customer service chatbot for investment queries</div>
+                        <div class="node-stats">
+                            <div class="node-stat">
+                                <span class="node-stat-value">2.4K</span>
+                                <span class="node-stat-label">Daily queries</span>
+                            </div>
+                            <div class="node-stat">
+                                <span class="node-stat-value">94%</span>
+                                <span class="node-stat-label">CSAT</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Third-Party Vendor 1: OpenAI -->
+                    <div class="node node-integration" style="top: 220px; left: 920px; min-width: 180px;">
+                        <div class="node-header">
+                            <div class="node-icon">🔴</div>
+                            <div class="node-title">OpenAI GPT-4</div>
+                        </div>
+                        <div class="node-subtitle">LLM for natural language understanding</div>
+                        <div class="node-stats">
+                            <div class="node-stat">
+                                <span class="node-stat-value">Vendor</span>
+                                <span class="node-stat-label">External API</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Third-Party Vendor 2: Salesforce Einstein -->
+                    <div class="node node-integration" style="top: 340px; left: 920px; min-width: 180px;">
+                        <div class="node-header">
+                            <div class="node-icon">☁️</div>
+                            <div class="node-title">Salesforce Einstein</div>
+                        </div>
+                        <div class="node-subtitle">CRM data enrichment & lead scoring</div>
+                        <div class="node-stats">
+                            <div class="node-stat">
+                                <span class="node-stat-value">Vendor</span>
+                                <span class="node-stat-label">SaaS Platform</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Third-Party Vendor 3: Pinecone -->
+                    <div class="node node-integration" style="top: 460px; left: 920px; min-width: 180px;">
+                        <div class="node-header">
+                            <div class="node-icon">🔍</div>
+                            <div class="node-title">Pinecone Vector DB</div>
+                        </div>
+                        <div class="node-subtitle">Semantic search for knowledge retrieval</div>
+                        <div class="node-stats">
+                            <div class="node-stat">
+                                <span class="node-stat-value">Vendor</span>
+                                <span class="node-stat-label">Database SaaS</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Internal AI Foundry (Hybrid) -->
+                    <div class="node node-agent" style="top: 600px; left: 720px; min-width: 200px;">
+                        <div class="node-header">
+                            <div class="node-icon">🏭</div>
+                            <div class="node-title">Internal AI Foundry</div>
+                        </div>
+                        <div class="node-subtitle">Fine-tuned models on Azure ML for compliance</div>
+                        <div class="node-stats">
+                            <div class="node-stat">
+                                <span class="node-stat-value">Azure</span>
+                                <span class="node-stat-label">Self-hosted</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Data Sources -->
+                    <div class="node node-data" style="top: 420px; left: 60px; min-width: 180px;">
+                        <div class="node-header">
+                            <div class="node-icon">💳</div>
+                            <div class="node-title">Customer Data</div>
+                        </div>
+                        <div class="node-subtitle">PII: Names, accounts, portfolios</div>
+                        <div class="node-stats">
+                            <div class="node-stat">
+                                <span class="node-stat-value">PII</span>
+                                <span class="node-stat-label">Confidential</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="node node-data" style="top: 540px; left: 60px; min-width: 180px;">
+                        <div class="node-header">
+                            <div class="node-icon">📊</div>
+                            <div class="node-title">Financial Data</div>
+                        </div>
+                        <div class="node-subtitle">Market data, pricing, transactions</div>
+                        <div class="node-stats">
+                            <div class="node-stat">
+                                <span class="node-stat-value">Internal</span>
+                                <span class="node-stat-label">Proprietary</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="node node-data" style="top: 660px; left: 60px; min-width: 180px;">
+                        <div class="node-header">
+                            <div class="node-icon">📚</div>
+                            <div class="node-title">Knowledge Base</div>
+                        </div>
+                        <div class="node-subtitle">Product docs, compliance rules, FAQs</div>
+                        <div class="node-stats">
+                            <div class="node-stat">
+                                <span class="node-stat-value">Internal</span>
+                                <span class="node-stat-label">Sensitive</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Data Flow Indicators -->
+                    <div style="position: absolute; top: 268px; left: 700px; padding: 0.5rem 1rem; background: var(--bg-elevated); border: 1px solid var(--accent-primary); border-radius: 6px; font-size: 0.75rem; color: var(--accent-primary); font-weight: 600; white-space: nowrap; z-index: 15;">
+                        📤 API Calls
+                    </div>
+                    
+                    <div style="position: absolute; top: 365px; left: 180px; padding: 0.5rem 1rem; background: var(--bg-elevated); border: 1px solid var(--accent-success); border-radius: 6px; font-size: 0.75rem; color: var(--accent-success); font-weight: 600; white-space: nowrap; z-index: 15;">
+                        📥 Data Input
+                    </div>
+                    
+                    <div style="position: absolute; top: 330px; left: 1120px; padding: 0.5rem 1rem; background: var(--bg-elevated); border: 1px solid var(--accent-warning); border-radius: 6px; font-size: 0.75rem; color: var(--accent-warning); font-weight: 600; white-space: nowrap; z-index: 15;">
+                        ⚠️ Data Exposure
+                    </div>
+                </div>
+                
+                <div class="network-legend">
+                    <div class="legend-item">
+                        <div class="legend-icon" style="background: rgba(124, 58, 237, 0.15); color: var(--accent-secondary);">👤</div>
+                        <span class="legend-text">Human Owners</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon" style="background: rgba(0, 217, 255, 0.15); color: var(--accent-primary);">🤖</div>
+                        <span class="legend-text">Core AI System</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--accent-danger);">🔴</div>
+                        <span class="legend-text">Third-Party Vendors</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-warning);">🏭</div>
+                        <span class="legend-text">Internal AI (Hybrid)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-success);">💾</div>
+                        <span class="legend-text">Data Sources</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Risk Assessment Section -->
+            <div class="chart-card" style="margin-top: 2rem;">
+                <div class="chart-header">
+                    <h3 class="chart-title">Risk Assessment - Financial Advisory Customer Service Bot</h3>
+                    <p class="chart-subtitle">Comprehensive risk analysis across all dependencies</p>
+                </div>
+                
+                <div style="margin-top: 2rem;">
+                    <!-- Overall Risk Score -->
+                    <div style="background: var(--bg-elevated); padding: 2rem; border-radius: 12px; margin-bottom: 2rem; border-left: 4px solid var(--accent-danger);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Overall Risk Score</h4>
+                                <p style="color: var(--text-muted); font-size: 0.875rem;">Aggregated risk across all dimensions</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 3rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent-danger);">8.7</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">HIGH RISK</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Risk Categories -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                        
+                        <!-- Data Leakage Risks -->
+                        <div class="risk-category-card">
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-subtle);">
+                                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(239, 68, 68, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🔓</div>
+                                <div>
+                                    <h4 style="font-size: 1rem; font-weight: 700;">Data Leakage Risks</h4>
+                                    <span style="font-size: 0.875rem; color: var(--accent-danger); font-weight: 600;">Score: 9.2 (Critical)</span>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-001: PII to OpenAI</strong>
+                                        <span style="color: var(--accent-danger); font-family: 'JetBrains Mono', monospace; font-weight: 700;">9.8</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">Customer names, account numbers, portfolio values sent to external LLM without data residency controls</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Exposure:</strong> 2.4K queries/day × PII = ~72K data points/month
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-002: Financial Data to Pinecone</strong>
+                                        <span style="color: var(--accent-danger); font-family: 'JetBrains Mono', monospace; font-weight: 700;">9.0</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">Proprietary market data and pricing stored in third-party vector database (US servers)</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Exposure:</strong> Knowledge base with ~50K docs containing trading strategies
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-003: CRM Data via Salesforce</strong>
+                                        <span style="color: var(--accent-warning); font-family: 'JetBrains Mono', monospace; font-weight: 700;">8.5</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">Customer interaction history and lead data processed by Salesforce Einstein AI</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Exposure:</strong> 12K customer records with contact details
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Vendor Dependency Risks -->
+                        <div class="risk-category-card">
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-subtle);">
+                                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(239, 68, 68, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🏢</div>
+                                <div>
+                                    <h4 style="font-size: 1rem; font-weight: 700;">Vendor Dependency Risks</h4>
+                                    <span style="font-size: 0.875rem; color: var(--accent-danger); font-weight: 600;">Score: 8.8 (High)</span>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-010: OpenAI Service Disruption</strong>
+                                        <span style="color: var(--accent-danger); font-family: 'JetBrains Mono', monospace; font-weight: 700;">9.2</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">Critical business function dependent on external API (no fallback)</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Impact:</strong> Complete bot outage affects 2.4K customer queries/day
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-011: Vendor Model Changes</strong>
+                                        <span style="color: var(--accent-warning); font-family: 'JetBrains Mono', monospace; font-weight: 700;">8.5</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">OpenAI may deprecate GPT-4 or change API without notice (no SLA)</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Impact:</strong> Major system refactoring required (2-3 months)
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-012: Vendor Lock-in</strong>
+                                        <span style="color: var(--accent-warning); font-family: 'JetBrains Mono', monospace; font-weight: 700;">8.0</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">Tightly coupled to 3 vendors (OpenAI, Salesforce, Pinecone) - difficult to migrate</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Impact:</strong> Estimated $500K+ migration cost if vendors change pricing
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Compliance Risks -->
+                        <div class="risk-category-card">
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-subtle);">
+                                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">⚖️</div>
+                                <div>
+                                    <h4 style="font-size: 1rem; font-weight: 700;">Regulatory Compliance Risks</h4>
+                                    <span style="font-size: 0.875rem; color: var(--accent-warning); font-weight: 600;">Score: 8.5 (High)</span>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-020: EU AI Act High-Risk Classification</strong>
+                                        <span style="color: var(--accent-danger); font-family: 'JetBrains Mono', monospace; font-weight: 700;">9.0</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">Financial advice = high-risk AI under EU AI Act. Missing required documentation & human oversight</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Penalty:</strong> Up to €15M or 3% global revenue
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-021: GDPR Data Processing</strong>
+                                        <span style="color: var(--accent-warning); font-family: 'JetBrains Mono', monospace; font-weight: 700;">8.5</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">PII sent to US vendors without proper Data Processing Agreements (DPAs) or consent</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Penalty:</strong> Up to €20M or 4% global revenue
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-022: Financial Services Regulations</strong>
+                                        <span style="color: var(--accent-warning); font-family: 'JetBrains Mono', monospace; font-weight: 700;">8.0</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">MiFID II requires suitability checks - bot provides advice without proper assessment</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Penalty:</strong> Regulatory sanctions + reputational damage
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Model Performance Risks -->
+                        <div class="risk-category-card">
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-subtle);">
+                                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🎯</div>
+                                <div>
+                                    <h4 style="font-size: 1rem; font-weight: 700;">Model Performance Risks</h4>
+                                    <span style="font-size: 0.875rem; color: var(--accent-warning); font-weight: 600;">Score: 7.5 (High)</span>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-030: Hallucination / Inaccurate Advice</strong>
+                                        <span style="color: var(--accent-warning); font-family: 'JetBrains Mono', monospace; font-weight: 700;">8.2</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">LLM may provide incorrect financial advice causing customer losses</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Impact:</strong> Customer lawsuits + regulatory fines + reputational damage
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-031: Model Drift</strong>
+                                        <span style="color: var(--accent-primary); font-family: 'JetBrains Mono', monospace; font-weight: 700;">7.0</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">No monitoring for accuracy degradation over time - bot quality may decline unnoticed</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Impact:</strong> Gradual customer satisfaction decline (currently 94% CSAT)
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-032: Bias in Recommendations</strong>
+                                        <span style="color: var(--accent-primary); font-family: 'JetBrains Mono', monospace; font-weight: 700;">7.2</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">Model may favor certain products or customer demographics due to training data bias</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Impact:</strong> Fair lending violations + discrimination lawsuits
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Operational Risks -->
+                        <div class="risk-category-card">
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-subtle);">
+                                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(0, 217, 255, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">⚙️</div>
+                                <div>
+                                    <h4 style="font-size: 1rem; font-weight: 700;">Operational Risks</h4>
+                                    <span style="font-size: 0.875rem; color: var(--accent-primary); font-weight: 600;">Score: 6.8 (Medium)</span>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-040: No Fallback System</strong>
+                                        <span style="color: var(--accent-warning); font-family: 'JetBrains Mono', monospace; font-weight: 700;">7.8</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">If any vendor fails (OpenAI, Pinecone, Salesforce), entire bot is non-functional</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Impact:</strong> Business continuity risk - no manual process backup
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-041: Unclear Ownership</strong>
+                                        <span style="color: var(--accent-primary); font-family: 'JetBrains Mono', monospace; font-weight: 700;">6.5</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">Split responsibility: Sarah (business), Marcus (tech), Jessica (data) - no single accountable owner</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Impact:</strong> Slow incident response, unclear escalation paths
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-042: Cost Unpredictability</strong>
+                                        <span style="color: var(--accent-primary); font-family: 'JetBrains Mono', monospace; font-weight: 700;">6.0</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">Usage-based pricing from 3 vendors - costs could spike unexpectedly with traffic increase</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Impact:</strong> Budget overruns (current: ~$8K/month, could spike to $20K+)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Security Risks -->
+                        <div class="risk-category-card">
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-subtle);">
+                                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(239, 68, 68, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🔒</div>
+                                <div>
+                                    <h4 style="font-size: 1rem; font-weight: 700;">Security & Access Risks</h4>
+                                    <span style="font-size: 0.875rem; color: var(--accent-warning); font-weight: 600;">Score: 7.8 (High)</span>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-050: Prompt Injection Attacks</strong>
+                                        <span style="color: var(--accent-warning); font-family: 'JetBrains Mono', monospace; font-weight: 700;">8.0</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">Malicious users could manipulate bot to expose data or provide harmful advice</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Mitigation:</strong> Input validation exists but not comprehensive
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-051: API Key Exposure</strong>
+                                        <span style="color: var(--accent-warning); font-family: 'JetBrains Mono', monospace; font-weight: 700;">7.5</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">API keys for 3 vendors stored in code repository - risk of accidental exposure</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Mitigation:</strong> Keys should be in Azure Key Vault (not currently)
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-item">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                        <strong style="color: var(--text-primary);">R-052: Insufficient Access Controls</strong>
+                                        <span style="color: var(--accent-primary); font-family: 'JetBrains Mono', monospace; font-weight: 700;">7.0</span>
+                                    </div>
+                                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.4;">Marcus (ML Engineer) has admin access to all 3 vendor accounts - single point of failure</p>
+                                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                        <strong>Impact:</strong> Insider threat risk + no separation of duties
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mitigation Summary -->
+            <div class="chart-card" style="margin-top: 2rem;">
+                <div class="chart-header">
+                    <h3 class="chart-title">Recommended Mitigation Actions</h3>
+                    <p class="chart-subtitle">Prioritized by risk score and implementation effort</p>
+                </div>
+                
+                <div class="priority-list" style="margin-top: 1.5rem;">
+                    <div class="priority-item">
+                        <div class="priority-header">
+                            <div>
+                                <div class="priority-title">P0: Implement Data Loss Prevention (DLP)</div>
+                                <div class="priority-meta">
+                                    <span>🎯 Addresses: R-001, R-002 (Risk score reduction: -4.5 points)</span>
+                                </div>
+                            </div>
+                            <div class="priority-score" style="background: rgba(239, 68, 68, 0.1); color: var(--accent-danger);">Critical</div>
+                        </div>
+                        <div class="priority-action">
+                            <strong>Action:</strong> Deploy Microsoft Purview DLP to scan/block PII before sending to external APIs | Timeline: 1-2 weeks | Owner: Marcus + CISO
+                        </div>
+                    </div>
+                    
+                    <div class="priority-item">
+                        <div class="priority-header">
+                            <div>
+                                <div class="priority-title">P0: EU AI Act Compliance Documentation</div>
+                                <div class="priority-meta">
+                                    <span>⚖️ Addresses: R-020 (Penalty avoidance: €15M)</span>
+                                </div>
+                            </div>
+                            <div class="priority-score" style="background: rgba(239, 68, 68, 0.1); color: var(--accent-danger);">Critical</div>
+                        </div>
+                        <div class="priority-action">
+                            <strong>Action:</strong> Create risk assessment, implement human oversight, document AI system | Timeline: 4-6 weeks | Owner: Jessica + Legal
+                        </div>
+                    </div>
+                    
+                    <div class="priority-item">
+                        <div class="priority-header">
+                            <div>
+                                <div class="priority-title">P1: Establish Data Processing Agreements (DPAs)</div>
+                                <div class="priority-meta">
+                                    <span>📄 Addresses: R-021 (GDPR compliance)</span>
+                                </div>
+                            </div>
+                            <div class="priority-score" style="background: rgba(245, 158, 11, 0.1); color: var(--accent-warning);">High</div>
+                        </div>
+                        <div class="priority-action">
+                            <strong>Action:</strong> Sign DPAs with OpenAI, Salesforce, Pinecone + implement Standard Contractual Clauses | Timeline: 2-3 weeks | Owner: Jessica + Legal
+                        </div>
+                    </div>
+                    
+                    <div class="priority-item">
+                        <div class="priority-header">
+                            <div>
+                                <div class="priority-title">P1: Build Fallback System (Hybrid Failover)</div>
+                                <div class="priority-meta">
+                                    <span>🔄 Addresses: R-010, R-040 (Business continuity)</span>
+                                </div>
+                            </div>
+                            <div class="priority-score" style="background: rgba(245, 158, 11, 0.1); color: var(--accent-warning);">High</div>
+                        </div>
+                        <div class="priority-action">
+                            <strong>Action:</strong> Configure internal AI Foundry as backup when vendors fail + implement circuit breaker pattern | Timeline: 3-4 weeks | Owner: Marcus
+                        </div>
+                    </div>
+                    
+                    <div class="priority-item">
+                        <div class="priority-header">
+                            <div>
+                                <div class="priority-title">P2: Implement Model Monitoring & Testing</div>
+                                <div class="priority-meta">
+                                    <span>📊 Addresses: R-030, R-031, R-032 (Accuracy & bias)</span>
+                                </div>
+                            </div>
+                            <div class="priority-score" style="background: rgba(0, 217, 255, 0.1); color: var(--accent-primary);">Medium</div>
+                        </div>
+                        <div class="priority-action">
+                            <strong>Action:</strong> Deploy Azure ML monitoring for drift detection + bias testing framework + human review sampling (10% of responses) | Timeline: 4-6 weeks | Owner: Marcus
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    
+    <script>
+        // Role switching functionality
+        const roleBtns = document.querySelectorAll('.role-btn');
+        const dashboards = {
+            'ceo': document.getElementById('ceo-dashboard'),
+            'cfo': document.getElementById('cfo-dashboard'),
+            'ciso': document.getElementById('ciso-dashboard'),
+            'architecture': document.getElementById('architecture-dashboard')
+        };
+        
+        roleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const role = btn.dataset.role;
+                
+                // Update active button
+                roleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Show corresponding dashboard with fade effect
+                Object.keys(dashboards).forEach(key => {
+                    if (key === role) {
+                        dashboards[key].style.display = 'block';
+                        // Trigger reflow to restart animation
+                        dashboards[key].style.animation = 'none';
+                        setTimeout(() => {
+                            dashboards[key].style.animation = '';
+                        }, 10);
+                    } else {
+                        dashboards[key].style.display = 'none';
+                    }
+                });
+            });
+        });
+        
+        // Animate bars on load
+        window.addEventListener('load', () => {
+            const bars = document.querySelectorAll('.risk-bar-fill');
+            bars.forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0';
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 100);
+            });
+        });
+        
+        // Interactive node highlighting in architecture view
+        const nodes = document.querySelectorAll('.node');
+        nodes.forEach(node => {
+            node.addEventListener('mouseenter', () => {
+                nodes.forEach(n => {
+                    if (n !== node) {
+                        n.style.opacity = '0.4';
+                    }
+                });
+            });
+            
+            node.addEventListener('mouseleave', () => {
+                nodes.forEach(n => {
+                    n.style.opacity = '1';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
